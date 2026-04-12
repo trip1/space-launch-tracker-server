@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: space-launch-server:latest
+    ports:
+      - "8083:8080"
+    environment:
+      HTTP_ADDR: ":8080"
+      VALKEY_ADDR: "valkey:6379"
+      SPACEDEVS_BASE_URL: "https://ll.thespacedevs.com/2.3.0/"
+      SPACEDEVS_TIMEOUT: "8s"
+      SPACEDEVS_CACHE_TTL: "60s"
+      SPACEDEVS_LAUNCHES_LIMIT: "25"
+      SPACEDEVS_EVENTS_LIMIT: "25"
+    depends_on:
+      - valkey
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "6379:6379"
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
