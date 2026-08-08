@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -117,10 +115,6 @@ func (c *Client) getJSON(ctx context.Context, path string, limit int, out any) e
 		return fmt.Errorf("read spacedevs response: %w", err)
 	}
 
-	if err := c.writeRawResponse(path, rawBody); err != nil {
-		return err
-	}
-
 	if c.store != nil {
 		_ = c.store.Set(ctx, cacheKey, rawBody, rawResponseCacheTTL)
 	}
@@ -134,23 +128,6 @@ func (c *Client) getJSON(ctx context.Context, path string, limit int, out any) e
 
 func (c *Client) rawBodyCacheKey(path string, limit int) string {
 	return fmt.Sprintf("spacedevs:raw:%s:limit=%d", strings.Trim(path, "/"), limit)
-}
-
-func (c *Client) writeRawResponse(path string, body []byte) error {
-	name := strings.Trim(path, "/")
-	name = strings.ReplaceAll(name, "/", "_")
-	if name == "" {
-		name = "response"
-	}
-
-	fileName := fmt.Sprintf("spacedevs_%s_%d.json", name, time.Now().UnixNano())
-	filePath := filepath.Join(os.TempDir(), fileName)
-
-	if err := os.WriteFile(filePath, body, 0644); err != nil {
-		return fmt.Errorf("write spacedevs raw response %s: %w", filePath, err)
-	}
-
-	return nil
 }
 
 func (c *Client) endpoint(path string, limit int) (string, error) {
