@@ -1,0 +1,73 @@
+name: space-launch-tracker
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: space-launch-tracker:e3011bdb722d
+    restart: unless-stopped
+    init: true
+    ports:
+      - "10.0.1.200:8083:8080"
+    environment:
+      HTTP_ADDR: ":8080"
+      VALKEY_ADDR: "valkey:6379"
+      SPACEDEVS_BASE_URL: "https://ll.thespacedevs.com/2.3.0/"
+      SPACEDEVS_TIMEOUT: "15s"
+      SPACEDEVS_CACHE_TTL: "15m"
+      SPACEDEVS_LAUNCHES_LIMIT: "25"
+      SPACEDEVS_EVENTS_LIMIT: "25"
+      FCM_ENABLED: "${FCM_ENABLED:-false}"
+      FCM_PROJECT_ID: "${FCM_PROJECT_ID:-}"
+      FCM_CREDENTIALS_FILE: "${FCM_CREDENTIALS_FILE:-/run/secrets/firebase-service-account.json}"
+      NOTIFICATION_POLL_INTERVAL: "${NOTIFICATION_POLL_INTERVAL:-5m}"
+    volumes:
+      - ${FCM_CREDENTIALS_HOST_PATH:-/dev/null}:${FCM_CREDENTIALS_FILE:-/run/secrets/firebase-service-account.json}:ro
+    depends_on:
+      valkey:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 0.75
+    stop_grace_period: 10s
+
+  valkey:
+    image: valkey/valkey@sha256:a038175878d66b9d274fbf8be73c0305e93798b83917647f167e18cef3c71eec
+    user: "999:1000"
+    restart: unless-stopped
+    command:
+      - valkey-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 64mb
+      - --maxmemory-policy
+      - allkeys-lru
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    read_only: true
+    tmpfs:
+      - /data:size=96m,mode=0700,uid=999,gid=1000
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.25

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"ds9labs.com/space-launch-server/internal/notifications"
 	"ds9labs.com/space-launch-server/internal/service"
 	"ds9labs.com/space-launch-server/internal/storage"
 )
@@ -14,10 +15,11 @@ type API struct {
 	logger   *slog.Logger
 	store    storage.Store
 	upcoming service.UpcomingService
+	registry *notifications.Registry
 }
 
-func NewAPI(logger *slog.Logger, store storage.Store, upcoming service.UpcomingService) *API {
-	return &API{logger: logger, store: store, upcoming: upcoming}
+func NewAPI(logger *slog.Logger, store storage.Store, upcoming service.UpcomingService, registry *notifications.Registry) *API {
+	return &API{logger: logger, store: store, upcoming: upcoming, registry: registry}
 }
 
 type response struct {

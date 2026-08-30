@@ -57,7 +57,9 @@ func (s *fakeStore) Set(ctx context.Context, key string, value []byte, expiratio
 	return nil
 }
 
-func (s *fakeStore) Close() error { return nil }
+func (s *fakeStore) Delete(ctx context.Context, key string) error               { delete(s.values, key); return nil }
+func (s *fakeStore) Keys(ctx context.Context, pattern string) ([]string, error) { return nil, nil }
+func (s *fakeStore) Close() error                                               { return nil }
 
 func TestUpcomingLaunchesUsesCacheWhenPresent(t *testing.T) {
 	provider := &fakeProvider{}
@@ -203,5 +205,9 @@ func (s *errStore) Get(ctx context.Context, key string) ([]byte, error) {
 }
 func (s *errStore) Set(ctx context.Context, key string, value []byte, expiration time.Duration) error {
 	return errors.New("boom")
+}
+func (s *errStore) Delete(ctx context.Context, key string) error { return errors.New("boom") }
+func (s *errStore) Keys(ctx context.Context, pattern string) ([]string, error) {
+	return nil, errors.New("boom")
 }
 func (s *errStore) Close() error { return nil }

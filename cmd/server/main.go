@@ -12,6 +12,7 @@ import (
 	"ds9labs.com/space-launch-server/internal/config"
 	"ds9labs.com/space-launch-server/internal/handler"
 	"ds9labs.com/space-launch-server/internal/httpserver"
+	"ds9labs.com/space-launch-server/internal/notifications"
 	"ds9labs.com/space-launch-server/internal/provider/spacedevs"
 	"ds9labs.com/space-launch-server/internal/service"
 	"ds9labs.com/space-launch-server/internal/storage"
@@ -38,8 +39,21 @@ func main() {
 
 	spaceDevsClient := spacedevs.NewClient(cfg.SpaceDevs, store)
 	upcomingService := service.NewSpaceDevsUpcomingService(spaceDevsClient, store, cfg.SpaceDevs)
+	registry := notifications.NewRegistry(store)
 
-	api := handler.NewAPI(logger, store, upcomingService)
+	var sender notifications.Sender = notifications.DisabledSender{}
+	if cfg.Notifications.Enabled {
+		firebaseSender, senderErr := notifications.NewFirebaseSender(ctx, cfg.Notifications.FirebaseProjectID, cfg.Notifications.CredentialsFile)
+		if senderErr != nil {
+			logger.Error("FCM is enabled but sender initialization failed", "error", senderErr)
+			os.Exit(1)
+		}
+		sender = firebaseSender
+		go notifications.NewMonitor(upcomingService, registry, sender, logger, cfg.SpaceDevs.LaunchesLimit).Run(ctx, cfg.Notifications.PollInterval)
+		logger.Info("FCM notification monitor enabled", "poll_interval", cfg.Notifications.PollInterval)
+	}
+
+	api := handler.NewAPI(logger, store, upcomingService, registry)
 	router := httpserver.NewRouter(api)
 	srv := httpserver.New(cfg.HTTP, router)
 

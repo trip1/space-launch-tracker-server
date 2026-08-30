@@ -20,8 +20,8 @@ func NewRouter(api *handler.API) http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "OPTIONS"},
-		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Device-Secret"},
 		ExposedHeaders: []string{"Link"},
 		MaxAge:         300,
 	}))
@@ -34,6 +34,7 @@ func NewRouter(api *handler.API) http.Handler {
 	r.Route("/v1", func(v1 chi.Router) {
 		v1.Get("/launches/upcoming", api.UpcomingLaunches)
 		v1.Get("/events/upcoming", api.UpcomingEvents)
+		v1.Post("/devices/fcm", api.RegisterFCMDevice)
 	})
 
 	return r

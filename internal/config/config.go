@@ -31,9 +31,17 @@ const (
 )
 
 type Config struct {
-	HTTP      HTTPConfig
-	Valkey    ValkeyConfig
-	SpaceDevs SpaceDevsConfig
+	HTTP          HTTPConfig
+	Valkey        ValkeyConfig
+	SpaceDevs     SpaceDevsConfig
+	Notifications NotificationConfig
+}
+
+type NotificationConfig struct {
+	Enabled           bool
+	FirebaseProjectID string
+	CredentialsFile   string
+	PollInterval      time.Duration
 }
 
 type HTTPConfig struct {
@@ -103,6 +111,12 @@ func Load() Config {
 			LaunchesLimit: getEnvInt("SPACEDEVS_LAUNCHES_LIMIT", defaultLaunchesLimit),
 			EventsLimit:   getEnvInt("SPACEDEVS_EVENTS_LIMIT", defaultEventsLimit),
 		},
+		Notifications: NotificationConfig{
+			Enabled:           getEnvBool("FCM_ENABLED", false),
+			FirebaseProjectID: getEnv("FCM_PROJECT_ID", ""),
+			CredentialsFile:   getEnv("FCM_CREDENTIALS_FILE", ""),
+			PollInterval:      getEnvDuration("NOTIFICATION_POLL_INTERVAL", 5*time.Minute),
+		},
 	}
 }
 
@@ -125,6 +139,18 @@ func getEnvInt(key string, defaultVal int) int {
 		return defaultVal
 	}
 
+	return parsed
+}
+
+func getEnvBool(key string, defaultVal bool) bool {
+	raw := getEnv(key, "")
+	if raw == "" {
+		return defaultVal
+	}
+	parsed, err := strconv.ParseBool(raw)
+	if err != nil {
+		return defaultVal
+	}
 	return parsed
 }
 

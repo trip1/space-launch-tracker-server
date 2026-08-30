@@ -71,6 +71,29 @@ func (s *ValkeyStore) Set(ctx context.Context, key string, value []byte, expirat
 	return nil
 }
 
+func (s *ValkeyStore) Delete(ctx context.Context, key string) error {
+	if err := s.client.Del(ctx, key).Err(); err != nil {
+		return fmt.Errorf("delete key %q: %w", key, err)
+	}
+	return nil
+}
+
+func (s *ValkeyStore) Keys(ctx context.Context, pattern string) ([]string, error) {
+	var keys []string
+	var cursor uint64
+	for {
+		page, next, err := s.client.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return nil, fmt.Errorf("scan keys %q: %w", pattern, err)
+		}
+		keys = append(keys, page...)
+		cursor = next
+		if cursor == 0 {
+			return keys, nil
+		}
+	}
+}
+
 func (s *ValkeyStore) Close() error {
 	return s.client.Close()
 }
