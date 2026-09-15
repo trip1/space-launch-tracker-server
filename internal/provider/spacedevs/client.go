@@ -33,6 +33,7 @@ type listResponse[T any] struct {
 }
 
 const rawResponseCacheTTL = 10 * time.Minute
+const maxRawResponseBytes = 4 * 1024 * 1024
 
 func NewClient(cfg config.SpaceDevsConfig, store storage.Store) *Client {
 	return &Client{
@@ -110,9 +111,12 @@ func (c *Client) getJSON(ctx context.Context, path string, limit int, out any) e
 		return fmt.Errorf("spacedevs status %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
-	rawBody, err := io.ReadAll(resp.Body)
+	rawBody, err := io.ReadAll(io.LimitReader(resp.Body, maxRawResponseBytes+1))
 	if err != nil {
 		return fmt.Errorf("read spacedevs response: %w", err)
+	}
+	if len(rawBody) > maxRawResponseBytes {
+		return errors.New("spacedevs response exceeds limit")
 	}
 
 	if c.store != nil {

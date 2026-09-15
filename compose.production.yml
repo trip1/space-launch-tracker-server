@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: space-launch-tracker:e3011bdb722d
+    image: space-launch-tracker:2.0.0
     restart: unless-stopped
     init: true
     ports:

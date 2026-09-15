@@ -39,6 +39,7 @@ func main() {
 
 	spaceDevsClient := spacedevs.NewClient(cfg.SpaceDevs, store)
 	upcomingService := service.NewSpaceDevsUpcomingService(spaceDevsClient, store, cfg.SpaceDevs)
+	lcdSpaceService := service.NewLCDSpaceService(upcomingService, store, service.LCDSpaceConfig{}, nil)
 	registry := notifications.NewRegistry(store)
 
 	var sender notifications.Sender = notifications.DisabledSender{}
@@ -53,7 +54,7 @@ func main() {
 		logger.Info("FCM notification monitor enabled", "poll_interval", cfg.Notifications.PollInterval)
 	}
 
-	api := handler.NewAPI(logger, store, upcomingService, registry)
+	api := handler.NewAPI(logger, store, upcomingService, registry, lcdSpaceService)
 	router := httpserver.NewRouter(api)
 	srv := httpserver.New(cfg.HTTP, router)
 

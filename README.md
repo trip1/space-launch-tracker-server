@@ -14,10 +14,13 @@ Scaffold for a high-performance Go server that will expose upcoming space launch
 - `GET /readyz`
 - `GET /v1/launches/upcoming`
 - `GET /v1/events/upcoming`
+- `GET /v1/lcd/space` — compact LCD1602 space summary; requires canonical one-decimal `X-LCD-Latitude` and `X-LCD-Longitude` request headers so location is not exposed in URLs or access logs
 
 Both upcoming endpoints accept optional `?limit=<n>`.
 
 Upcoming endpoints check Valkey first and only call SpaceDevs on cache miss.
+
+The LCD endpoint returns a bounded summary for the next launch, Moon phase, NOAA Kp index, highest visible navigational planet, nearest upcoming JPL close approach, and approximate Voyager 1 mission status. It caches summaries for five minutes. Coordinates are required for planet altitude/azimuth; LCD firmware rounds them to one decimal degree and sends them in headers rather than the URL.
 
 ## Run
 

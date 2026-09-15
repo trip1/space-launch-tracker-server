@@ -39,3 +39,14 @@ func TestFetchUpcomingLaunchesDoesNotRequireWritableTempDirectory(t *testing.T) 
 		t.Fatalf("unexpected response: %#v", response)
 	}
 }
+
+func TestFetchUpcomingLaunchesRejectsOversizedResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(make([]byte, maxRawResponseBytes+1))
+	}))
+	defer server.Close()
+	client := NewClient(config.SpaceDevsConfig{BaseURL: server.URL, Timeout: time.Second}, nil)
+	if _, err := client.FetchUpcomingLaunches(context.Background(), 1); err == nil {
+		t.Fatal("oversized response accepted")
+	}
+}

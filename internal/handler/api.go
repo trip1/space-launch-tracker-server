@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -16,10 +17,15 @@ type API struct {
 	store    storage.Store
 	upcoming service.UpcomingService
 	registry *notifications.Registry
+	lcdSpace lcdSpaceService
 }
 
-func NewAPI(logger *slog.Logger, store storage.Store, upcoming service.UpcomingService, registry *notifications.Registry) *API {
-	return &API{logger: logger, store: store, upcoming: upcoming, registry: registry}
+type lcdSpaceService interface {
+	Summary(context.Context, float64, float64) service.LCDSpaceSummary
+}
+
+func NewAPI(logger *slog.Logger, store storage.Store, upcoming service.UpcomingService, registry *notifications.Registry, lcdSpace lcdSpaceService) *API {
+	return &API{logger: logger, store: store, upcoming: upcoming, registry: registry, lcdSpace: lcdSpace}
 }
 
 type response struct {
